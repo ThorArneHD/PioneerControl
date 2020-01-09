@@ -1,4 +1,4 @@
-#Må kjøre kommandoen Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Currentuser først!
+#Must sometimes run the command, on windows Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Currentuser first!
 #Inspired and picked some lines from https://github.com/dquercus/pioneeravclient/blob/master/pioneeravclient/clients.py
 
 import requests
