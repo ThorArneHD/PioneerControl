@@ -6,6 +6,7 @@ import json
 import telnetlib
 import time
 import datetime
+import logging
 from time import sleep
 
 IPRC = "192.168.1.239"
@@ -17,6 +18,7 @@ StatusVI = ""
 StatusRC = ""
 Stoppedtime = time.time()
 Stoppedtimeset = False
+logging.basicConfig(filename="logfile.log", level=logging.DEBUG)
 
 
 #if reciever status er off og play status er play, send signal om å starte reciever, vent litt sett riktig input, vent litt sett riktig lydnivå
@@ -27,14 +29,14 @@ Stoppedtimeset = False
 def PioneerTN(cmd):
     command = cmd.encode('ascii', cmd) + b"\r\n"
     #print("command sent : ")
-    print(command)
+    logging.debug(command)
     tn = telnetlib.Telnet(IPRC,PortRC)
     tn.read_eager()
-    #tn.write(b"PO\r\n")
-    #tn.write(command)
+    tn.write(command)
     sleep(0.5)
     output = tn.read_eager().decode("utf-8").strip()
     tn.close()
+    logging.debug(output)
     return(output)
 
 
@@ -42,8 +44,8 @@ def RampVolumeTo(volume):
     ExVolstring = PioneerTN("?V")
     ExVolsub = ExVolstring[3:]
     ExVolint = float(ExVolsub)
-    print(ExVolint)
-    print(volume)
+    logging.debug(ExVolint)
+    logging.debug(volume)
     ramp = abs(volume - ExVolint)/10
     CurVolint = ExVolint
     while CurVolint < volume:
@@ -67,17 +69,17 @@ def Mainprogram():
     global Stoppedtime, Stoppedtimeset
     v = requests.get(url = URLVI)
     v_dict = v.json()
-    print(v_dict["status"])
+    logging.debug(v_dict["status"])
     StatusVI = v_dict["status"]
     VolumeVI = v_dict["volume"]
     if StatusVI == "pause":
         StatusVI == "stop"
     StatusRC = PioneerTN("?P")
-    print(StatusRC)
+    logging.debug(StatusRC)
     #if reciever status er off og play status er play, send signal om å starte reciever, vent litt sett riktig input, vent litt sett riktig lydnivå
     if StatusVI == "play":
         if StatusRC == "PWR1":
-            print("Power on reciever")
+            logging.debug("Power on reciever")
             PioneerTN("PO")
             sleep(6)
             PioneerTN("04FN")
@@ -90,14 +92,14 @@ def Mainprogram():
                 Stoppedtime = time.time()
                 Stoppedtimeset = True
 
-            if time.time() - Stoppedtime>60 * 15:
-                print("Power off Reciever")
+            if time.time() - Stoppedtime>60 * 15: #Shut down after 15 minutes
+                logging.debug("Power off Reciever")
                 PioneerTN("05FN") #Setter input til TV
                 RampVolumeTo(101)
                 sleep(6)
                 PioneerTN("PF")
                 Stoppedtimeset = False #For å resette timer
-            print(time.time() - Stoppedtime)
+            logging.debug(time.time() - Stoppedtime)
 
     #if reciver status er on og play status er play
     if StatusVI == "play":
@@ -111,5 +113,6 @@ def Mainprogram():
 
 
 while True:
+    logging.debug(time.ctime())
     Mainprogram()
     sleep(5)
